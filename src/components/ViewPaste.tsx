@@ -17,7 +17,7 @@ export default function ViewPaste() {
   useEffect(() => {
     const fetchPaste = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/pastes/${id}`, {
+        const res = await fetch(`https://pastebinbackend-production.up.railway.app/${id}`, {
           cache: 'no-store'
         });
 
