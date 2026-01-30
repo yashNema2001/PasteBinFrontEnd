@@ -106,11 +106,8 @@
 //   );
 // }
 
-'use client';
-
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation'; // ✅ FIX
-import Link from 'next/link';               // ✅ FIX
+import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, Calendar } from 'lucide-react';
 
 interface PasteData {
@@ -120,15 +117,18 @@ interface PasteData {
 }
 
 export default function ViewPaste() {
-  const params = useParams();
-  const id = params.id as string; // ✅ FIX
+  const { id } = useParams<{ id: string }>();
 
   const [paste, setPaste] = useState<PasteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setError('Invalid paste id');
+      setLoading(false);
+      return;
+    }
 
     const fetchPaste = async () => {
       try {
@@ -142,7 +142,7 @@ export default function ViewPaste() {
           return;
         }
 
-        const data = await res.json();
+        const data: PasteData = await res.json();
         setPaste(data);
       } catch {
         setError('Failed to connect to server');
@@ -154,8 +154,7 @@ export default function ViewPaste() {
     fetchPaste();
   }, [id]);
 
-  // ---------- UI BELOW IS SAME ----------
-
+  // ---------- LOADING ----------
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center">
@@ -167,6 +166,7 @@ export default function ViewPaste() {
     );
   }
 
+  // ---------- ERROR / NOT FOUND ----------
   if (error || !paste) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center">
@@ -176,7 +176,7 @@ export default function ViewPaste() {
           </h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <Link
-            href="/"
+            to="/"
             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
           >
             <ArrowLeft size={16} />
@@ -187,11 +187,12 @@ export default function ViewPaste() {
     );
   }
 
+  // ---------- SUCCESS ----------
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
       <div className="max-w-4xl mx-auto px-4 py-12">
         <Link
-          href="/"
+          to="/"
           className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6 font-medium"
         >
           <ArrowLeft size={16} />
@@ -201,6 +202,7 @@ export default function ViewPaste() {
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="flex flex-col gap-4 mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Paste Content</h2>
+
             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
               {paste.remaining_views !== null && (
                 <div className="flex items-center gap-2">
@@ -208,11 +210,13 @@ export default function ViewPaste() {
                   <span>Views remaining: {paste.remaining_views}</span>
                 </div>
               )}
+
               {paste.expires_at && (
                 <div className="flex items-center gap-2">
                   <Calendar size={16} />
                   <span>
-                    Expires: {new Date(paste.expires_at).toLocaleString()}
+                    Expires:{' '}
+                    {new Date(paste.expires_at).toLocaleString()}
                   </span>
                 </div>
               )}
