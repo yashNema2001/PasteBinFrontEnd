@@ -38,7 +38,7 @@ export default function Home() {
         payload.max_views = parseInt(maxViews, 10);
       }
 
-      const res = await fetch('https://pastebinbackend-production.up.railway.app/', {
+      const res = await fetch('https://pastebinbackend-production.up.railway.app/api/pastes', {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' }
