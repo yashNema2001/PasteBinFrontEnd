@@ -153,6 +153,7 @@
 
 import { useState } from 'react';
 import { ExternalLink, Copy, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation'; // ✅ NEW
 
 export default function Home() {
   const [content, setContent] = useState('');
@@ -162,7 +163,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const FRONTEND_BASE_URL = 'https://paste-bin-front-end-5soj.vercel.app';
+  const router = useRouter(); // ✅ NEW
 
   const copyToClipboard = async () => {
     try {
@@ -197,24 +198,21 @@ export default function Home() {
         'https://pastebinbackend-production.up.railway.app/api/pastes',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' }
         }
       );
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (res.ok) {
+        // ✅ ONLY LOGIC CHANGE: redirect using backend URL
+        router.push(data.url);
+      } else {
         setError(data.error || 'Failed to create paste');
-        return;
       }
-
-      // ✅ IMPORTANT FIX
-      setUrl(`${FRONTEND_BASE_URL}/p/${data.id}`);
-      setContent('');
-      setMaxViews('');
     } catch {
-      setError('Failed to connect to server');
+      setError('Failed to connect to server. Make sure backend is running.');
     } finally {
       setLoading(false);
     }
@@ -227,52 +225,59 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Pastebin</h1>
           <p className="text-gray-600 mb-8">Share text snippets instantly</p>
 
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-64 p-4 border rounded-lg font-mono"
-            placeholder="Enter your paste content..."
-          />
-
-          <input
-            type="number"
-            value={maxViews}
-            onChange={(e) => setMaxViews(e.target.value)}
-            placeholder="Max views (optional)"
-            className="mt-4 w-full p-2 border rounded-lg"
-          />
-
-          {error && (
-            <div className="mt-4 text-red-600 font-medium">{error}</div>
-          )}
-
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="mt-4 w-full bg-blue-600 text-white py-3 rounded-lg"
-          >
-            {loading ? 'Creating...' : 'Create Paste'}
-          </button>
-
-          {url && (
-            <div className="mt-6 p-4 bg-green-50 rounded-lg">
-              <a href={url} target="_blank" className="underline text-blue-600">
-                {url}
-                <ExternalLink size={16} className="inline ml-1" />
-              </a>
-
-              <button
-                onClick={copyToClipboard}
-                className="mt-3 w-full bg-blue-600 text-white py-2 rounded-lg"
-              >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? ' Copied!' : ' Copy URL'}
-              </button>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Paste Content
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Enter your paste content here..."
+                className="w-full h-64 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+              />
             </div>
-          )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Max Views (optional)
+                </label>
+                <input
+                  type="number"
+                  value={maxViews}
+                  onChange={(e) => setMaxViews(e.target.value)}
+                  placeholder="e.g., 5"
+                  min="1"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  TTL
+                </label>
+                <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                  1 hour
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={submit}
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+            >
+              {loading ? 'Creating...' : 'Create Paste'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
